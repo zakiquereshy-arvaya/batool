@@ -3,7 +3,6 @@ annotated-types==0.7.0
 anyio==4.12.0
 attrs==25.4.0
 authlib==1.6.6
--e file:///Users/zakiquereshy/AgentsToolkitProjects/batool
 beartype==0.22.9
 cachetools==6.2.4
 certifi==2025.11.12
