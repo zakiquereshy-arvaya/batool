@@ -61,12 +61,12 @@ conversation_history: dict[str, list] = {}
 
 app = App(plugins=[DevToolsPlugin()])
 
-
+"""
 @app.on_message_pattern(re.compile(r"hello|hi|greetings"))
 async def handle_greeting(ctx: ActivityContext[MessageActivity]) -> None:
-    """Handle greeting messages."""
     await ctx.send("Hello! How can I assist you today?")
 
+"""
 
 @app.on_message
 async def handle_message(ctx: ActivityContext[MessageActivity]):
