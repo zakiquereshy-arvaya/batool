@@ -157,7 +157,6 @@ async def handle_message(ctx: ActivityContext[MessageActivity]):
         if user_name:
             user_metadata_note = f"\n\n## CURRENT USER CONTEXT\nThe person making this request is: {user_name}. Use this name for tools that require userName or sender parameters."
         
-        # Build instructions with user metadata if available
         base_instructions = """CRITICAL SYSTEM REQUIREMENT
 You MUST NOT use emojis, special characters, or any Unicode characters above ASCII 255.
 Use only plain text: letters (A-Z, a-z), numbers (0-9), and basic punctuation (. , ! ? - ' ").
