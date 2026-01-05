@@ -1,6 +1,5 @@
 import asyncio
 import os
-import re
 from dotenv import load_dotenv
 
 from microsoft_teams.api import MessageActivity, TypingActivityInput
@@ -51,16 +50,32 @@ mcp_plugin_time_entry.use_mcp_server(
 # Create ChatPrompt - Thin wrapper that connects Azure OpenAI (LLM) + MCP Server (Tools)
 # The MCP server does all the heavy lifting for tool execution
 chat_prompt = ChatPrompt(
-    azure_openai_model,
+    model=azure_openai_model,
     plugins=[mcp_plugin_booking, mcp_plugin_time_entry]
 )
 
 # Store conversation history per conversation thread
 # This preserves context that the MCP server needs
 conversation_history: dict[str, list] = {}
-#comment to test new run
 
-app = App(plugins=[DevToolsPlugin()])
+# Configure plugins based on environment
+# DevToolsPlugin is for local development only - disable in production
+# Note: Empty plugins array is fine for production - App class works without plugins
+plugins = []
+environment = os.getenv('ENVIRONMENT', '').lower()
+is_development = environment == 'development'
+
+if is_development:
+    plugins.append(DevToolsPlugin())
+    print("Running in DEVELOPMENT mode with DevToolsPlugin enabled")
+else:
+    # Production mode: plugins array is intentionally empty
+    # The App class will expose /api/messages endpoint for Azure Bot Service
+    print("Running in PRODUCTION mode - DevToolsPlugin disabled")
+
+# Initialize the App - this will automatically expose /api/messages endpoint for Azure Bot Service
+# Empty plugins array is perfectly valid - App works fine without any plugins
+app = App(plugins=plugins)
 
 """
 @app.on_message_pattern(re.compile(r"hello|hi|greetings"))
