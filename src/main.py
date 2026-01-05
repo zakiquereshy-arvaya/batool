@@ -77,6 +77,10 @@ else:
 # Empty plugins array is perfectly valid - App works fine without any plugins
 app = App(plugins=plugins)
 
+# Expose ASGI app for Azure deployment with Uvicorn
+# The App instance itself is the ASGI application
+asgi_app = app
+
 """
 @app.on_message_pattern(re.compile(r"hello|hi|greetings"))
 async def handle_greeting(ctx: ActivityContext[MessageActivity]) -> None:
@@ -252,9 +256,11 @@ The user making this request is identified in the message. Use their name when t
         await ctx.reply(f"Sorry, I encountered an error: {error_msg}")
 
 
+# Local development: use app.start() which includes DevToolsPlugin support
 def main():
     asyncio.run(app.start())
 
 
 if __name__ == "__main__":
+    # For local development
     main()
