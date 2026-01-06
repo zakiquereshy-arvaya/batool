@@ -78,8 +78,51 @@ else:
 app = App(plugins=plugins)
 
 # Expose ASGI app for Azure deployment with Uvicorn
-# The App instance itself is the ASGI application
-asgi_app = app
+# The App class from microsoft-teams-apps wraps a Starlette application
+# We need to access the underlying Starlette app which is the actual ASGI application
+# Common patterns: app.app, app._app, or app.router.app
+try:
+    # Try different common attribute names for the underlying ASGI app
+    if hasattr(app, 'app') and callable(getattr(app, 'app', None)):
+        asgi_app = app.app
+        print("Found ASGI app at app.app")
+    elif hasattr(app, '_app') and callable(getattr(app, '_app', None)):
+        asgi_app = app._app
+        print("Found ASGI app at app._app")
+    elif hasattr(app, 'router') and hasattr(app.router, 'app'):
+        asgi_app = app.router.app
+        print("Found ASGI app at app.router.app")
+    else:
+        # Debug: print available attributes to help identify the correct one
+        print("Available App attributes:")
+        attrs = [attr for attr in dir(app) if not attr.startswith('__')]
+        for attr in attrs[:20]:  # Print first 20 attributes
+            obj = getattr(app, attr, None)
+            if callable(obj):
+                print(f"  {attr}: callable")
+            else:
+                print(f"  {attr}: {type(obj).__name__}")
+        
+        # If we can't find it, we'll need to use app.start() instead
+        # For now, raise an error to see what's available
+        raise AttributeError("Could not find ASGI app attribute. App attributes printed above.")
+except Exception as e:
+    print(f"Error accessing ASGI app: {e}")
+    # Fallback: We'll need to use a different startup approach
+    # Set asgi_app to None to indicate we need app.start() instead
+    asgi_app = None
+    print("ASGI app not found - will need to use app.start() method")
+
+# Debug: Print when module is loaded (for Azure deployment verification)
+print("=" * 50)
+print("Bot application module loaded successfully")
+print(f"Environment: {os.getenv('ENVIRONMENT', 'production')}")
+if asgi_app:
+    print(f"ASGI app type: {type(asgi_app)}")
+    print(f"ASGI app callable: {callable(asgi_app)}")
+else:
+    print("ASGI app not available - using app.start() method")
+print("=" * 50)
 
 """
 @app.on_message_pattern(re.compile(r"hello|hi|greetings"))
@@ -263,3 +306,11 @@ def main():
 if __name__ == "__main__":
     # For local development
     main()
+else:
+    # For Azure deployment: if asgi_app is None, we need to use app.start() with port from env
+    # This is a fallback if we can't access the ASGI app directly
+    if asgi_app is None:
+        print("WARNING: ASGI app not found. Using app.start() method.")
+        print("This may not work with Uvicorn. Check logs for App attributes.")
+        # Don't start here - let Uvicorn handle it if asgi_app is set
+        # Otherwise, Azure will need a different startup command
